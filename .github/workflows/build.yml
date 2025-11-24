@@ -10,6 +10,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:20.10.24
+        options: --privileged
+        ports:
+          - 8000:8000
 
     steps:
       # Step 1: Checkout repository
@@ -37,29 +43,28 @@ jobs:
           nohup python src/main.py &
           sleep 5  # wait for Flask to start
 
-      # Step 6: Install OWASP ZAP and zap-cli
-      - name: Install OWASP ZAP
+      # Step 6: Run OWASP ZAP using Docker
+      - name: Start OWASP ZAP Docker
         run: |
-          sudo apt update
-          sudo apt install -y zaproxy
-          pip install zap-cli
+          docker pull owasp/zap2docker-stable
+          docker run -d -u zap -p 8000:8080 --name zap owasp/zap2docker-stable zap.sh -daemon -port 8080 -host 0.0.0.0
+          sleep 15
 
-      # Step 7: Run OWASP ZAP Scan
+      # Step 7: Run ZAP Quick Scan
       - name: Run OWASP ZAP Scan
         run: |
-          nohup zaproxy -daemon -port 8000 -host 0.0.0.0 &
-          sleep 15  # wait for ZAP to start
-          zap-cli status -t 30
-          zap-cli quick-scan -r report.html http://localhost:8000
+          pip install zap-cli
+          zap-cli --zap-url http://localhost --zap-port 8000 status -t 30
+          zap-cli --zap-url http://localhost --zap-port 8000 quick-scan -r report.html http://localhost:8000
 
-      # Step 8: Upload OWASP ZAP report as artifact
+      # Step 8: Upload OWASP ZAP Report
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
           path: report.html
 
-      # Step 9: SonarQube Scan
+      # Step 9: Run SonarQube Scan
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
