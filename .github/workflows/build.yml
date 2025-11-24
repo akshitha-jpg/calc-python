@@ -42,7 +42,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=YOUR_PROJECT_KEY
-            -Dsonar.organization=YOUR_ORG_NAME
+            -Dsonar.projectKey=akshitha-jpg_calc-python
+            -Dsonar.organization=akshitha-jpg
             -Dsonar.sources=src
             -Dsonar.python.coverage.reportPaths=coverage.xml
