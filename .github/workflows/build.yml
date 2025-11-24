@@ -43,12 +43,13 @@ jobs:
           nohup python src/main.py &
           sleep 5  # wait for Flask to start
 
-      # Step 6: Run OWASP ZAP using Docker
+      # Step 6: Start OWASP ZAP using Docker
       - name: Start OWASP ZAP Docker
         run: |
-          docker pull owasp/zap2docker-stable
-          docker run -d -u zap -p 8000:8080 --name zap owasp/zap2docker-stable zap.sh -daemon -port 8080 -host 0.0.0.0
+          docker pull owasp/zap2docker-stable:latest
+          docker run -d -u zap -p 8000:8080 --name zap owasp/zap2docker-stable:latest zap.sh -daemon -port 8080 -host 0.0.0.0
           sleep 15
+
 
       # Step 7: Run ZAP Quick Scan
       - name: Run OWASP ZAP Scan
