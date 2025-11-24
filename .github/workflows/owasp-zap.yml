@@ -1,7 +1,10 @@
 name: OWASP ZAP Scan
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_run:
+    workflows: ["Build + SonarQube"]
+    types:
+      - completed  # Trigger only after build workflow completes
 
 jobs:
   zap-scan:
@@ -9,27 +12,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
       - uses: actions/checkout@v4
 
-      # Step 2: Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # Step 3: Install Flask
-      - name: Install Dependencies
+      - name: Install Flask
         run: |
           pip install flask
 
-      # Step 4: Start Flask App in background
       - name: Start Flask App
         run: |
           nohup python src/main.py &   # Start your app
-          sleep 5                     # Wait for app to be ready
+          sleep 5                     # Wait for app to start
 
-      # Step 5: Run OWASP ZAP scan
       - name: Run OWASP ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.9.0
         with:
@@ -38,7 +36,6 @@ jobs:
           output: "report.html"
           fail_on_alert: "true"
 
-      # Step 6: Upload ZAP report as artifact
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
         with:
