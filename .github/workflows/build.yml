@@ -13,29 +13,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Step 2: Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # Step 3: Install dependencies
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
           pip install pytest pytest-cov flask
 
-      # Step 4: Run unit tests + coverage
       - name: Run Unit Tests with Coverage
         run: |
           pytest src/ --cov=src --cov-report=xml:coverage.xml
 
-      # Step 5: SonarQube scan
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
