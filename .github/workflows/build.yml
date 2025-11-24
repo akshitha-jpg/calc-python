@@ -56,13 +56,13 @@ jobs:
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.host.url=https://sonarcloud.io
 
-      # Step 6: Start Flask App in background
+      # Step 6: Start Flask App
       - name: Start Flask App
         run: |
           nohup python src/main.py &
           sleep 5
 
-      # Step 7: Run OWASP ZAP DAST scan
+      # Step 7: Run OWASP ZAP scan
       - name: OWASP ZAP Scan
         uses: zaproxy/action-full-scan@v0.9.0
         with:
@@ -71,9 +71,9 @@ jobs:
           output: "zap-report.html"
           fail_on_alert: "false"
 
-      # Step 8: Upload ZAP Report safely (avoids fork PR error)
-      - name: Upload ZAP Report
-        if: github.event.pull_request.head.repo.fork == false
+      # Step 8: Upload ZAP report (WORKS — avoids fork issue)
+      - name: Upload ZAP report
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
