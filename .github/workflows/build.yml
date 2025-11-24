@@ -1,30 +1,19 @@
-name: Build + SAST + DAST
-
-permissions:
-  contents: write
-  actions: write
-  security-events: write
-  pull-requests: write
-  id-token: write
+name: Build + Test + Sonar + OWASP ZAP
 
 on:
   push:
     branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, reopened]
+      - main     # Runs only when you push to main
 
 jobs:
-  build-test-sast-dast:
-    name: Unit Tests + SonarQube + OWASP ZAP
+  sast-dast:
+    name: Run Unit Tests + Sonar + OWASP ZAP
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout repository
+      # Step 1: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       # Step 2: Setup Python
       - name: Setup Python
@@ -43,7 +32,7 @@ jobs:
         run: |
           pytest src/ --cov=src --cov-report=xml:coverage.xml
 
-      # Step 5: SonarQube scan
+      # Step 5: SonarQube Scan
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -56,7 +45,7 @@ jobs:
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.host.url=https://sonarcloud.io
 
-      # Step 6: Start Flask App
+      # Step 6: Start Flask App (required for ZAP scan)
       - name: Start Flask App
         run: |
           nohup python src/main.py &
@@ -68,13 +57,12 @@ jobs:
         with:
           target: "http://localhost:8000"
           format: "html"
-          output: "zap-report.html"
-          fail_on_alert: "false"
+          output: "report.html"
+          fail_on_alert: false     # prevents failure, keeps job green
 
-      # Step 8: Upload ZAP report (WORKS — avoids fork issue)
-      - name: Upload ZAP report
-        if: github.event.pull_request.head.repo.full_name == github.repository
+      # Step 8: Upload ZAP Report
+      - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-report.html
+          path: report.html
