@@ -1,10 +1,9 @@
 name: Build + SAST + DAST
 
-# Required so OWASP ZAP and artifacts can be uploaded without permission errors
 permissions:
   contents: write
-  id-token: write
   pull-requests: write
+  id-token: write
 
 on:
   push:
@@ -20,13 +19,14 @@ jobs:
 
     steps:
       # Step 1: Checkout repository
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       # Step 2: Setup Python
       - name: Setup Python
-      - uses: actions/setup-python@v5
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -60,14 +60,14 @@ jobs:
           nohup python src/main.py &
           sleep 5
 
-      # Step 7: Run OWASP ZAP scan (DAST)
+      # Step 7: Run OWASP ZAP DAST scan
       - name: OWASP ZAP Scan
         uses: zaproxy/action-full-scan@v0.9.0
         with:
           target: "http://localhost:8000"
           format: "html"
           output: "zap-report.html"
-          fail_on_alert: "false"   # prevents failing on warnings
+          fail_on_alert: "false"
 
       # Step 8: Upload ZAP report (skip for forked PRs)
       - name: Upload ZAP Report
