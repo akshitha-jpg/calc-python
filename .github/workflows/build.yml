@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      # Step 3: Install dependencies
+      # Step 3: Install Python dependencies
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
@@ -31,26 +31,35 @@ jobs:
         run: |
           pytest src/ --cov=src --cov-report=xml:coverage.xml
 
-      # Step 5: Start Flask App
+      # Step 5: Start Flask App in background
       - name: Start Flask App
         run: |
           nohup python src/main.py &
-          sleep 5  # wait for server to start
+          sleep 5  # wait for Flask to start
 
-      # Step 6: Run OWASP ZAP scan
+      # Step 6: Install OWASP ZAP and zap-cli
+      - name: Install OWASP ZAP
+        run: |
+          sudo apt update
+          sudo apt install -y zaproxy
+          pip install zap-cli
+
+      # Step 7: Run OWASP ZAP Scan
       - name: Run OWASP ZAP Scan
         run: |
+          nohup zaproxy -daemon -port 8000 -host 0.0.0.0 &
+          sleep 15  # wait for ZAP to start
           zap-cli status -t 30
           zap-cli quick-scan -r report.html http://localhost:8000
 
-      # Step 7: Upload ZAP Report
+      # Step 8: Upload OWASP ZAP report as artifact
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
           path: report.html
 
-      # Step 8: SonarQube Scan
+      # Step 9: SonarQube Scan
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
