@@ -2,6 +2,8 @@ name: Build + SAST + DAST
 
 permissions:
   contents: write
+  actions: write
+  security-events: write
   pull-requests: write
   id-token: write
 
@@ -69,11 +71,10 @@ jobs:
           output: "zap-report.html"
           fail_on_alert: "false"
 
-      # Step 8: Upload ZAP report (skip for forked PRs)
+      # Step 8: Upload ZAP Report safely (avoids fork PR error)
       - name: Upload ZAP Report
         if: github.event.pull_request.head.repo.fork == false
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
           path: zap-report.html
-
