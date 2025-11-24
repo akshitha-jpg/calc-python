@@ -1,4 +1,4 @@
-name: Build + SonarQube
+name: Build + SAST + DAST
 
 on:
   push:
@@ -8,8 +8,12 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build-test-sonarqube:
-    name: Tests + SonarQube
+
+  # ============================
+  # 1️⃣ SAST JOB (STATIC TEST + SONARQUBE)
+  # ============================
+  sast:
+    name: Unit Tests + SonarQube (SAST)
     runs-on: ubuntu-latest
 
     steps:
@@ -42,3 +46,46 @@ jobs:
             -Dsonar.sources=src
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.host.url=https://sonarcloud.io
+
+
+  # ============================
+  # 2️⃣ DAST JOB (OWASP ZAP)
+  # Runs ONLY after SAST job succeeds
+  # ============================
+  dast:
+    name: OWASP ZAP DAST Scan
+    runs-on: ubuntu-latest
+    needs: sast   # <-- ensures SAST runs first
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Flask
+        run: pip install flask
+
+      # Start Flask on port 8000
+      - name: Start Flask App
+        run: |
+          nohup python src/main.py &
+          sleep 8
+
+      # Run ZAP Scan
+      - name: Run OWASP ZAP Scan
+        uses: zaproxy/action-full-scan@v0.9.0
+        with:
+          target: "http://localhost:8000"
+          format: "html"
+          output: "zap-report.html"
+          fail_on_alert: false   # prevents pipeline failure
+
+      # Upload report
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
