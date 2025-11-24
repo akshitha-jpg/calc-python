@@ -1,4 +1,4 @@
-name: Build + Tests + SonarQube + OWASP ZAP
+name: Build + SonarQube + OWASP ZAP
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-test-sonarqube-zap:
-    name: Unit Tests + SonarQube + OWASP ZAP
+    name: Tests + SonarQube + OWASP ZAP
     runs-on: ubuntu-latest
 
     steps:
@@ -49,22 +49,21 @@ jobs:
       # Step 6: Start Flask App in background
       - name: Start Flask App
         run: |
-          nohup python src/main.py &   # Run app in background
-          sleep 5                      # Wait for server to start
+          nohup python src/main.py &
+          sleep 5
 
-      # Step 7: OWASP ZAP Full Scan
-      - name: OWASP ZAP Full Scan
+      # Step 7: Run OWASP ZAP DAST scan
+      - name: OWASP ZAP Scan
         uses: zaproxy/action-full-scan@v0.9.0
         with:
-          target: "http://localhost:8000"
+          target: "http://host.docker.internal:8000"
           format: "html"
           output: "report.html"
           fail_on_alert: false
-          github_token: ""   # Disable GitHub integration to avoid errors
-          cmd_options: "-J"  # Disable alert uploads to GitHub
+          github_token: ""
 
       # Step 8: Upload ZAP report as artifact
-      - name: Upload ZAP Report
+      - name: Upload ZAP report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
