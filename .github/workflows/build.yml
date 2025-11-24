@@ -11,19 +11,6 @@ jobs:
   build-test-sonarqube-zap:
     name: Tests + SonarQube + OWASP ZAP
     runs-on: ubuntu-latest
-    services:
-      flask:
-        image: python:3.12
-        ports:
-          - 8000:8000
-        options: > 
-          --health-cmd="curl -f http://localhost:8000 || exit 1"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=5
-        volumes:
-          - .:/app
-        command: bash -c "pip install flask && python /app/src/main.py"
 
     steps:
       # Step 1: Checkout repository
@@ -61,7 +48,13 @@ jobs:
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.host.url=https://sonarcloud.io
 
-      # Step 6: OWASP ZAP scan
+      # Step 6: Start Flask app in background for OWASP ZAP
+      - name: Start Flask App
+        run: |
+          export FLASK_APP=src/main.py
+          flask run --host=0.0.0.0 --port=8000 &
+
+      # Step 7: Run OWASP ZAP scan
       - name: OWASP ZAP Scan
         uses: zaproxy/action-full-scan@v0.8.0
         with:
@@ -70,7 +63,7 @@ jobs:
           output: "report.html"
           fail_on_risk: "Medium"
 
-      # Step 7: Upload ZAP report as artifact
+      # Step 8: Upload ZAP report as artifact
       - name: Upload ZAP report
         uses: actions/upload-artifact@v3
         with:
